@@ -101,7 +101,7 @@ public:
   bool switch_off() final;
   bool is_registered() final;
   bool start_service_request() final;
-  bool start_tracking_area_update_request() final;
+  bool start_tracking_area_update_request();
   bool enable_data();
   bool disable_data();
   void stop() final;

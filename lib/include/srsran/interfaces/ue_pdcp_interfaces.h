@@ -81,7 +81,7 @@ class stack_interface_gw
 public:
   virtual bool is_registered()         = 0;
   virtual bool start_service_request() = 0;
-  virtual bool start_tracking_area_update_request() = 0;
+//  virtual bool start_tracking_area_update_request() = 0;
   virtual void write_sdu(uint32_t eps_bearer_id, srsran::unique_byte_buffer_t sdu) = 0;
   ///< Allow GW to query if a radio bearer for a given EPS bearer ID is currently active
   virtual bool has_active_radio_bearer(uint32_t eps_bearer_id) = 0;
