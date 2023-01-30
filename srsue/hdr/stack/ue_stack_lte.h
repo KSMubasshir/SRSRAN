@@ -101,6 +101,7 @@ public:
   bool switch_off() final;
   bool is_registered() final;
   bool start_service_request() final;
+  bool start_tracking_area_update_request() final;
   bool enable_data();
   bool disable_data();
   void stop() final;
@@ -267,7 +268,6 @@ private:
 
   // Metrics helper
   std::atomic<uint32_t> ul_dropped_sdus{0};
-  bool                  start_tracking_area_update_request();
 };
 
 } // namespace srsue

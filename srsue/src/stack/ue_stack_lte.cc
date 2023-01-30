@@ -369,7 +369,7 @@ bool ue_stack_lte::start_tracking_area_update_request()
   if (running) {
     ue_task_queue.try_push([this]() {
       if (args.sa_mode) {
-        nas_5g.start_service_request();
+        nas_5g.start_tracking_area_update_request();
       } else {
         nas.start_tracking_area_update_request(srsran::establishment_cause_t::mo_data);
       }

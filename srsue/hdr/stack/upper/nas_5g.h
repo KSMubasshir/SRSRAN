@@ -85,6 +85,8 @@ public:
   // Metrics getter
   void get_metrics(nas_5g_metrics_t& metrics);
 
+  int                                         start_tracking_area_update_request();
+
 private:
   rrc_nr_interface_nas_5g* rrc_nr = nullptr;
   usim_interface_nas*      usim   = nullptr;
@@ -206,7 +208,6 @@ private:
   };
 
   std::array<pdu_session_t, MAX_PDU_SESSIONS> pdu_sessions;
-  int                                         start_tracking_area_update_request();
 };
 } // namespace srsue
 #endif

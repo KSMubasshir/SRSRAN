@@ -359,7 +359,8 @@ void gw::run_thread()
           if (!service_wait) {
             logger.info(
                 "UE does not have service, waiting for NAS service request (%d/%d)", service_wait, SERVICE_WAIT_TOUT);
-            stack->start_service_request();
+//            stack->start_service_request();
+            stack->start_tracking_area_update_request();
           }
           usleep(100000);
           service_wait++;
