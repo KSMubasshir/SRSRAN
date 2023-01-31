@@ -3209,8 +3209,6 @@ liblte_mme_unpack_tracking_area_update_reject_msg(LIBLTE_BYTE_MSG_STRUCT*       
 //  // not implemented optionals
 //} LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT;
 typedef struct {
-  LIBLTE_MME_KSI_AND_SEQUENCE_NUMBER_STRUCT ksi_and_seq_num;
-  uint16                                    short_mac;
 } LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT;
 
 // Functions
