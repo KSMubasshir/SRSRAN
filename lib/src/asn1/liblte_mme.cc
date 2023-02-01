@@ -7347,6 +7347,7 @@ LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_complete_msg(
 
   return (err);
 }
+
 LIBLTE_ERROR_ENUM liblte_mme_unpack_tracking_area_update_complete_msg(
     LIBLTE_BYTE_MSG_STRUCT*                              msg,
     LIBLTE_MME_TRACKING_AREA_UPDATE_COMPLETE_MSG_STRUCT* ta_update_complete)
@@ -7513,7 +7514,201 @@ LIBLTE_ERROR_ENUM liblte_mme_unpack_tracking_area_update_request_msg(LIBLTE_BYTE
   return (err);
 }
 
+//LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT* ta_update_request,
+//                                                     LIBLTE_BYTE_MSG_STRUCT*               msg)
+//{
+//  bzero(msg, sizeof(LIBLTE_BYTE_MSG_STRUCT));
+//  return liblte_mme_pack_tracking_area_update_request_msg(ta_update_request, LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS, 0, msg);
+//}
 
+
+LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(
+    LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT* ta_update_request,
+    uint8                                                sec_hdr_type,
+    uint32                                               count,
+    LIBLTE_BYTE_MSG_STRUCT*                              msg)
+{
+  bzero(msg, sizeof(LIBLTE_BYTE_MSG_STRUCT));
+  LIBLTE_ERROR_ENUM err     = LIBLTE_ERROR_INVALID_INPUTS;
+  uint8*            msg_ptr = msg->msg;
+
+  if (ta_update_request != NULL && msg != NULL) {
+    if (LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS != sec_hdr_type) {
+      // Protocol Discriminator and Security Header Type
+      *msg_ptr = (sec_hdr_type << 4) | (LIBLTE_MME_PD_EPS_MOBILITY_MANAGEMENT);
+      msg_ptr++;
+
+      // MAC will be filled in later
+      msg_ptr += 4;
+
+      // Sequence Number
+      *msg_ptr = count & 0xFF;
+      msg_ptr++;
+    }
+
+    // Protocol Discriminator and Security Header Type
+    *msg_ptr = (LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS << 4) | (LIBLTE_MME_PD_EPS_MOBILITY_MANAGEMENT);
+    msg_ptr++;
+
+    // Message Type
+    *msg_ptr = LIBLTE_MME_MSG_TYPE_TRACKING_AREA_UPDATE_REQUEST;
+    msg_ptr++;
+
+    // EPS Attach Type & NAS Key Set Identifier
+    *msg_ptr = 0;
+    liblte_mme_pack_eps_attach_type_ie(ta_update_request->eps_attach_type, 0, &msg_ptr);
+    liblte_mme_pack_nas_key_set_id_ie(&ta_update_request->nas_ksi, 4, &msg_ptr);
+    msg_ptr++;
+
+    // EPS Mobile ID
+    liblte_mme_pack_eps_mobile_id_ie(&ta_update_request->eps_mobile_id, &msg_ptr);
+
+    // UE Network Capability
+    liblte_mme_pack_ue_network_capability_ie(&ta_update_request->ue_network_cap, &msg_ptr);
+
+    // ESM Message Container
+    liblte_mme_pack_esm_message_container_ie(&ta_update_request->esm_msg, &msg_ptr);
+
+    // Old P-TMSI Signature
+    if (ta_update_request->old_p_tmsi_signature_present) {
+      *msg_ptr = LIBLTE_MME_P_TMSI_SIGNATURE_IEI;
+      msg_ptr++;
+      liblte_mme_pack_p_tmsi_signature_ie(ta_update_request->old_p_tmsi_signature, &msg_ptr);
+    }
+
+    // Additional GUTI
+    if (ta_update_request->additional_guti_present) {
+      *msg_ptr = LIBLTE_MME_ADDITIONAL_GUTI_IEI;
+      msg_ptr++;
+      liblte_mme_pack_eps_mobile_id_ie(&ta_update_request->additional_guti, &msg_ptr);
+    }
+
+    // Last Visited Registered TAI
+    if (ta_update_request->last_visited_registered_tai_present) {
+      *msg_ptr = LIBLTE_MME_LAST_VISITED_REGISTERED_TAI_IEI;
+      msg_ptr++;
+      liblte_mme_pack_tracking_area_id_ie(&ta_update_request->last_visited_registered_tai, &msg_ptr);
+    }
+
+    // DRX Parameter
+    if (ta_update_request->drx_param_present) {
+      *msg_ptr = LIBLTE_MME_DRX_PARAMETER_IEI;
+      msg_ptr++;
+      liblte_mme_pack_drx_parameter_ie(&ta_update_request->drx_param, &msg_ptr);
+    }
+
+    // MS Network Capability
+    if (ta_update_request->ms_network_cap_present) {
+      *msg_ptr = LIBLTE_MME_MS_NETWORK_CAPABILITY_IEI;
+      msg_ptr++;
+      liblte_mme_pack_ms_network_capability_ie(&ta_update_request->ms_network_cap, &msg_ptr);
+    }
+
+    // Old Location Area ID
+    if (ta_update_request->old_lai_present) {
+      *msg_ptr = LIBLTE_MME_LOCATION_AREA_IDENTIFICATION_IEI;
+      msg_ptr++;
+      liblte_mme_pack_location_area_id_ie(&ta_update_request->old_lai, &msg_ptr);
+    }
+
+    // TMSI Status
+    if (ta_update_request->tmsi_status_present) {
+      *msg_ptr = LIBLTE_MME_TMSI_STATUS_IEI << 4;
+      liblte_mme_pack_tmsi_status_ie(ta_update_request->tmsi_status, 0, &msg_ptr);
+      msg_ptr++;
+    }
+
+    // Mobile Station Classmark 2
+    if (ta_update_request->ms_cm2_present) {
+      *msg_ptr = LIBLTE_MME_MS_CLASSMARK_2_IEI;
+      msg_ptr++;
+      liblte_mme_pack_mobile_station_classmark_2_ie(&ta_update_request->ms_cm2, &msg_ptr);
+    }
+
+    // Mobile Station Classmark 3
+    if (ta_update_request->ms_cm3_present) {
+      *msg_ptr = LIBLTE_MME_MS_CLASSMARK_3_IEI;
+      msg_ptr++;
+    }
+
+    // Supported Codecs
+    if (ta_update_request->supported_codecs_present) {
+      *msg_ptr = LIBLTE_MME_SUPPORTED_CODEC_LIST_IEI;
+      msg_ptr++;
+      liblte_mme_pack_supported_codec_list_ie(&ta_update_request->supported_codecs, &msg_ptr);
+    }
+
+    // Additional Update Type
+    if (ta_update_request->additional_update_type_present) {
+      *msg_ptr = LIBLTE_MME_ADDITIONAL_UPDATE_TYPE_IEI << 4;
+      liblte_mme_pack_additional_update_type_ie(ta_update_request->additional_update_type, 0, &msg_ptr);
+      msg_ptr++;
+    }
+
+    // Voice Domain Preference and UE's Usage Setting
+    if (ta_update_request->voice_domain_pref_and_ue_usage_setting_present) {
+      *msg_ptr = LIBLTE_MME_VOICE_DOMAIN_PREF_AND_UE_USAGE_SETTING_IEI;
+      msg_ptr++;
+      liblte_mme_pack_voice_domain_pref_and_ue_usage_setting_ie(&ta_update_request->voice_domain_pref_and_ue_usage_setting,
+                                                                &msg_ptr);
+    }
+
+    // Device Properties
+    if (ta_update_request->device_properties_present) {
+      *msg_ptr = LIBLTE_MME_ATTACH_REQUEST_DEVICE_PROPERTIES_IEI << 4;
+      liblte_mme_pack_device_properties_ie(ta_update_request->device_properties, 0, &msg_ptr);
+      msg_ptr++;
+    }
+
+    // Old GUTI Type
+    if (ta_update_request->old_guti_type_present) {
+      *msg_ptr = LIBLTE_MME_GUTI_TYPE_IEI << 4;
+      liblte_mme_pack_guti_type_ie(attach_req->old_guti_type, 0, &msg_ptr);
+      msg_ptr++;
+    }
+
+    if (ta_update_request->additional_security_cap_present) {
+      *msg_ptr = LIBLTE_MME_ADDITIONAL_SECURITY_CAP_IEI;
+      msg_ptr++;
+      *msg_ptr = 0x4; // Length
+      msg_ptr++;
+
+      // Pack same capabilities that are used for EUTRA
+      *msg_ptr = ta_update_request->ue_network_cap.eea[0] << 7;
+      *msg_ptr |= ta_update_request->ue_network_cap.eea[1] << 6;
+      *msg_ptr |= ta_update_request->ue_network_cap.eea[2] << 5;
+      *msg_ptr |= ta_update_request->ue_network_cap.eea[3] << 4;
+      *msg_ptr |= ta_update_request->ue_network_cap.eea[4] << 3;
+      *msg_ptr |= ta_update_request->ue_network_cap.eea[5] << 2;
+      *msg_ptr |= ta_update_request->ue_network_cap.eea[6] << 1;
+      *msg_ptr |= ta_update_request->ue_network_cap.eea[7];
+      msg_ptr++;
+
+      // 0x00 (5G-EA8=0, 5G-EA9=0, 5G-EA10=0, 5G-EA11=0, 5G-EA12=0, 5G-EA13=0, 5G-EA14=0, 5G-EA15=0)
+      *msg_ptr = 0x00;
+      msg_ptr++;
+
+      // Pack same integrity caps
+      *msg_ptr = ta_update_request->ue_network_cap.eia[0] << 7;
+      *msg_ptr |= ta_update_request->ue_network_cap.eia[1] << 6;
+      *msg_ptr |= ta_update_request->ue_network_cap.eia[2] << 5;
+      *msg_ptr |= ta_update_request->ue_network_cap.eia[3] << 4;
+      *msg_ptr |= ta_update_request->ue_network_cap.eia[4] << 3;
+      *msg_ptr |= ta_update_request->ue_network_cap.eia[5] << 2;
+      *msg_ptr |= ta_update_request->ue_network_cap.eia[6] << 1;
+      *msg_ptr |= ta_update_request->ue_network_cap.eia[7];
+      msg_ptr++;
+
+      // 0x00 (5G-IA8=0, 5G-IA9=0, 5G-IA10=0, 5G-IA11=0, 5G-IA12=0, 5G-IA13=0, 5G-IA14=0, 5G-IA15=0)
+      *msg_ptr = 0x00;
+      msg_ptr++;
+    }
+
+    // Fill in the number of bytes used
+    msg->N_bytes = msg_ptr - msg->msg;
+
+    err = LIBLTE_SUCCESS;
+}
 
 
 

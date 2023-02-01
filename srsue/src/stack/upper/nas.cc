@@ -1717,24 +1717,107 @@ void nas::gen_tracking_area_update_request(srsran::unique_byte_buffer_t& msg)
     logger.error("Fatal Error: Couldn't allocate PDU in gen_tracking_area_update_request().");
     return;
   }
+  LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT tau_req;
+  bzero(&tau_req, sizeof(LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT));
+
   logger.info("Generating tracking area update request");
 
-  uint8*            msg_ptr = msg->msg;
+  tau_req.eps_attach_type = LIBLTE_MME_EPS_ATTACH_TYPE_EPS_ATTACH;
 
-  // Protocol Discriminator and Security Header Type
-  *msg_ptr = (LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS << 4) | (LIBLTE_MME_PD_EPS_MOBILITY_MANAGEMENT);
-  msg_ptr++;
+  for (u_int32_t i = 0; i < 8; i++) {
+    tau_req.ue_network_cap.eea[i] = eea_caps[i];
+    tau_req.ue_network_cap.eia[i] = eia_caps[i];
+  }
 
-  // Message Type
-  *msg_ptr = LIBLTE_MME_MSG_TYPE_TRACKING_AREA_UPDATE_REQUEST;
-  msg_ptr++;
+  tau_req.ue_network_cap.uea_present                     = false; // UMTS encryption algos
+  tau_req.ue_network_cap.uia_present                     = false; // UMTS integrity algos
+  tau_req.ue_network_cap.ucs2_present                    = false;
+  tau_req.ms_network_cap_present                         = false; // A/Gb mode (2G) or Iu mode (3G)
+  tau_req.ue_network_cap.lpp_present                     = false;
+  tau_req.ue_network_cap.lcs_present                     = false;
+  tau_req.ue_network_cap.onexsrvcc_present               = false;
+  tau_req.ue_network_cap.nf_present                      = false;
+  tau_req.old_p_tmsi_signature_present                   = false;
+  tau_req.additional_guti_present                        = false;
+  tau_req.last_visited_registered_tai_present            = false;
+  tau_req.drx_param_present                              = false;
+  tau_req.old_lai_present                                = false;
+  tau_req.tmsi_status_present                            = false;
+  tau_req.ms_cm2_present                                 = false;
+  tau_req.ms_cm3_present                                 = false;
+  tau_req.supported_codecs_present                       = false;
+  tau_req.additional_update_type_present                 = false;
+  tau_req.voice_domain_pref_and_ue_usage_setting_present = false;
+  tau_req.device_properties_present                      = false;
+  tau_req.old_guti_type_present                          = false;
 
-  // Fill in the number of bytes used
-  msg->N_bytes = msg_ptr - msg->msg;
+  if (rrc->has_nr_dc()) {
+    tau_req.ue_network_cap.dc_nr_present    = true;
+    tau_req.ue_network_cap.dc_nr            = true;
+    tau_req.additional_security_cap_present = true;
+  }
+
+  // ESM message (PDN connectivity request) for first default bearer
+//  gen_pdn_connectivity_request(&tau_req.esm_msg);
+
+  // GUTI or IMSI attach
+  if (have_guti && have_ctxt) {
+    tau_req.tmsi_status_present      = true;
+    tau_req.tmsi_status              = LIBLTE_MME_TMSI_STATUS_VALID_TMSI;
+    tau_req.eps_mobile_id.type_of_id = LIBLTE_MME_EPS_MOBILE_ID_TYPE_GUTI;
+    memcpy(&tau_req.eps_mobile_id.guti, &ctxt.guti, sizeof(LIBLTE_MME_EPS_MOBILE_ID_GUTI_STRUCT));
+    tau_req.old_guti_type         = LIBLTE_MME_GUTI_TYPE_NATIVE;
+    tau_req.old_guti_type_present = true;
+    tau_req.nas_ksi.tsc_flag      = LIBLTE_MME_TYPE_OF_SECURITY_CONTEXT_FLAG_NATIVE;
+    tau_req.nas_ksi.nas_ksi       = ctxt.ksi;
+    logger.info("Requesting GUTI attach. "
+                "m_tmsi: %x, mcc: %x, mnc: %x, mme_group_id: %x, mme_code: %x",
+                ctxt.guti.m_tmsi,
+                ctxt.guti.mcc,
+                ctxt.guti.mnc,
+                ctxt.guti.mme_group_id,
+                ctxt.guti.mme_code);
+
+    // According to Sec 4.4.5, the attach request is always unciphered, even if a context exists
+    liblte_mme_pack_tracking_area_update_request_msg(
+        &tau_req, LIBLTE_MME_SECURITY_HDR_TYPE_INTEGRITY, ctxt_base.tx_count, (LIBLTE_BYTE_MSG_STRUCT*)msg.get());
+
+    if (apply_security_config(msg, LIBLTE_MME_SECURITY_HDR_TYPE_INTEGRITY)) {
+      logger.error("Error applying NAS security.");
+      return;
+    }
+  } else {
+    tau_req.eps_mobile_id.type_of_id = LIBLTE_MME_EPS_MOBILE_ID_TYPE_IMSI;
+    tau_req.nas_ksi.tsc_flag         = LIBLTE_MME_TYPE_OF_SECURITY_CONTEXT_FLAG_NATIVE;
+    tau_req.nas_ksi.nas_ksi          = LIBLTE_MME_NAS_KEY_SET_IDENTIFIER_NO_KEY_AVAILABLE;
+    usim->get_imsi_vec(tau_req.eps_mobile_id.imsi, 15);
+    logger.info("Requesting IMSI attach (IMSI=%s)", usim->get_imsi_str().c_str());
+    liblte_mme_pack_tracking_area_update_request_msg(&tau_req, LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS, 0,(LIBLTE_BYTE_MSG_STRUCT*)msg.get());
+  }
 
   if (pcap != nullptr) {
     pcap->write_nas(msg->msg, msg->N_bytes);
   }
+
+  if (have_ctxt) {
+    set_k_enb_count(ctxt_base.tx_count);
+    ctxt_base.tx_count++;
+  }
+
+  // stop T3411 and T3402
+  if (t3411.is_running()) {
+    logger.debug("Stopping T3411");
+    t3411.stop();
+  }
+
+  if (t3402.is_running()) {
+    logger.debug("Stopping T3402");
+    t3402.stop();
+  }
+
+  // start T3410
+  logger.debug("Starting T3410. Timeout in %d ms.", t3410.duration());
+  t3410.run();
 }
 
 void nas::gen_pdn_connectivity_request(LIBLTE_BYTE_MSG_STRUCT* msg)

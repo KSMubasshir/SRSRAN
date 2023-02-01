@@ -3209,9 +3209,48 @@ liblte_mme_unpack_tracking_area_update_reject_msg(LIBLTE_BYTE_MSG_STRUCT*       
 //  // not implemented optionals
 //} LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT;
 typedef struct {
+  LIBLTE_MME_NAS_KEY_SET_ID_STRUCT                         nas_ksi;
+  LIBLTE_MME_EPS_MOBILE_ID_STRUCT                          eps_mobile_id;
+  LIBLTE_MME_UE_NETWORK_CAPABILITY_STRUCT                  ue_network_cap;
+  LIBLTE_BYTE_MSG_STRUCT                                   esm_msg;
+  LIBLTE_MME_EPS_MOBILE_ID_STRUCT                          additional_guti;
+  LIBLTE_MME_TRACKING_AREA_ID_STRUCT                       last_visited_registered_tai;
+  LIBLTE_MME_DRX_PARAMETER_STRUCT                          drx_param;
+  LIBLTE_MME_MS_NETWORK_CAPABILITY_STRUCT                  ms_network_cap;
+  LIBLTE_MME_LOCATION_AREA_ID_STRUCT                       old_lai;
+  LIBLTE_MME_MOBILE_STATION_CLASSMARK_2_STRUCT             ms_cm2;
+  LIBLTE_MME_MOBILE_STATION_CLASSMARK_3_STRUCT             ms_cm3;
+  LIBLTE_MME_SUPPORTED_CODEC_LIST_STRUCT                   supported_codecs;
+  LIBLTE_MME_VOICE_DOMAIN_PREF_AND_UE_USAGE_SETTING_STRUCT voice_domain_pref_and_ue_usage_setting;
+  LIBLTE_MME_TMSI_STATUS_ENUM                              tmsi_status;
+  LIBLTE_MME_ADDITIONAL_UPDATE_TYPE_ENUM                   additional_update_type;
+  LIBLTE_MME_DEVICE_PROPERTIES_ENUM                        device_properties;
+  LIBLTE_MME_GUTI_TYPE_ENUM                                old_guti_type;
+  uint32                                                   old_p_tmsi_signature;
+  uint8                                                    eps_attach_type;
+  bool                                                     old_p_tmsi_signature_present;
+  bool                                                     additional_guti_present;
+  bool                                                     last_visited_registered_tai_present;
+  bool                                                     drx_param_present;
+  bool                                                     ms_network_cap_present;
+  bool                                                     old_lai_present;
+  bool                                                     tmsi_status_present;
+  bool                                                     ms_cm2_present;
+  bool                                                     ms_cm3_present;
+  bool                                                     supported_codecs_present;
+  bool                                                     additional_update_type_present;
+  bool                                                     voice_domain_pref_and_ue_usage_setting_present;
+  bool                                                     device_properties_present;
+  bool                                                     old_guti_type_present;
+  bool                                                     additional_security_cap_present;
 } LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT;
 
 // Functions
+LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(
+    LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT* ta_update_request,
+    uint8                                                sec_hdr_type,
+    uint32                                               count,
+    LIBLTE_BYTE_MSG_STRUCT*                              msg);
 LIBLTE_ERROR_ENUM liblte_mme_unpack_tracking_area_update_request_msg(LIBLTE_BYTE_MSG_STRUCT*                             msg,
                                                                      LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT* tau_req);
 
