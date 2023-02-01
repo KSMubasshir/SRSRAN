@@ -7514,14 +7514,6 @@ LIBLTE_ERROR_ENUM liblte_mme_unpack_tracking_area_update_request_msg(LIBLTE_BYTE
   return (err);
 }
 
-//LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT* ta_update_request,
-//                                                     LIBLTE_BYTE_MSG_STRUCT*               msg)
-//{
-//  bzero(msg, sizeof(LIBLTE_BYTE_MSG_STRUCT));
-//  return liblte_mme_pack_tracking_area_update_request_msg(ta_update_request, LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS, 0, msg);
-//}
-
-
 LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(
     LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT* ta_update_request,
     uint8                                                sec_hdr_type,
@@ -7649,8 +7641,8 @@ LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(
     if (ta_update_request->voice_domain_pref_and_ue_usage_setting_present) {
       *msg_ptr = LIBLTE_MME_VOICE_DOMAIN_PREF_AND_UE_USAGE_SETTING_IEI;
       msg_ptr++;
-      liblte_mme_pack_voice_domain_pref_and_ue_usage_setting_ie(&ta_update_request->voice_domain_pref_and_ue_usage_setting,
-                                                                &msg_ptr);
+      liblte_mme_pack_voice_domain_pref_and_ue_usage_setting_ie(
+          &ta_update_request->voice_domain_pref_and_ue_usage_setting, &msg_ptr);
     }
 
     // Device Properties
@@ -7663,7 +7655,7 @@ LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(
     // Old GUTI Type
     if (ta_update_request->old_guti_type_present) {
       *msg_ptr = LIBLTE_MME_GUTI_TYPE_IEI << 4;
-      liblte_mme_pack_guti_type_ie(attach_req->old_guti_type, 0, &msg_ptr);
+      liblte_mme_pack_guti_type_ie(ta_update_request->old_guti_type, 0, &msg_ptr);
       msg_ptr++;
     }
 
@@ -7708,6 +7700,7 @@ LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(
     msg->N_bytes = msg_ptr - msg->msg;
 
     err = LIBLTE_SUCCESS;
+  }
 }
 
 
