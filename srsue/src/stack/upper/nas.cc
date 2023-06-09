@@ -57,7 +57,8 @@ nas::nas(srslog::basic_logger& logger_, srsran::task_sched_handle task_sched_) :
   t3421(task_sched_.get_unique_timer()),
   reattach_timer(task_sched_.get_unique_timer()),
   airplane_mode_sim_timer(task_sched_.get_unique_timer())
-{}
+{
+}
 
 int nas::init(usim_interface_nas* usim_, rrc_interface_nas* rrc_, gw_interface_nas* gw_, const nas_args_t& cfg_)
 {
@@ -384,7 +385,6 @@ void nas::start_service_request(srsran::establishment_cause_t cause_)
   state.set_service_request_initiated();
 }
 
-
 void nas::start_tracking_area_update_request(srsran::establishment_cause_t cause_)
 {
   logger.info("Tracking Area Update Request with cause %s.", to_string(cause_).c_str());
@@ -415,7 +415,6 @@ void nas::start_tracking_area_update_request(srsran::establishment_cause_t cause
   }
   state.set_tau_initiated();
 }
-
 
 /**
  * Non-blocking function to send the detach request to the network .
@@ -485,7 +484,7 @@ bool nas::paging(s_tmsi_t* ue_identity)
 {
   if (state.get_state() == emm_state_t::state_t::registered) {
     logger.info("Received paging: requesting RRC connection establishment");
-//    start_service_request(srsran::establishment_cause_t::mt_access);
+    //    start_service_request(srsran::establishment_cause_t::mt_access);
     start_tracking_area_update_request(srsran::establishment_cause_t::spare1);
   } else {
     logger.warning("Received paging while in state %s", state.get_full_state_text().c_str());
@@ -723,7 +722,6 @@ void nas::select_plmn()
   }
 }
 
-
 bool nas::check_cap_replay(LIBLTE_MME_UE_SECURITY_CAPABILITIES_STRUCT* caps)
 {
   for (uint32_t i = 0; i < 8; i++) {
@@ -899,11 +897,8 @@ void nas::parse_attach_accept(uint32_t lcid, unique_byte_buffer_t pdu)
 
       // Setup GW
       char* err_str = nullptr;
-      if (gw->setup_if_addr(act_def_eps_bearer_context_req.eps_bearer_id,
-                            LIBLTE_MME_PDN_TYPE_IPV4,
-                            ip_addr,
-                            nullptr,
-                            err_str)) {
+      if (gw->setup_if_addr(
+              act_def_eps_bearer_context_req.eps_bearer_id, LIBLTE_MME_PDN_TYPE_IPV4, ip_addr, nullptr, err_str)) {
         logger.error("%s - %s", gw_setup_failure_str.c_str(), err_str ? err_str : "");
         srsran::console("%s\n", gw_setup_failure_str.c_str());
       }
@@ -931,11 +926,8 @@ void nas::parse_attach_accept(uint32_t lcid, unique_byte_buffer_t pdu)
                       act_def_eps_bearer_context_req.pdn_addr.addr[7]);
       // Setup GW
       char* err_str = nullptr;
-      if (gw->setup_if_addr(act_def_eps_bearer_context_req.eps_bearer_id,
-                            LIBLTE_MME_PDN_TYPE_IPV6,
-                            0,
-                            ipv6_if_id,
-                            err_str)) {
+      if (gw->setup_if_addr(
+              act_def_eps_bearer_context_req.eps_bearer_id, LIBLTE_MME_PDN_TYPE_IPV6, 0, ipv6_if_id, err_str)) {
         logger.error("%s - %s", gw_setup_failure_str.c_str(), err_str);
         srsran::console("%s\n", gw_setup_failure_str.c_str());
       }
@@ -981,11 +973,8 @@ void nas::parse_attach_accept(uint32_t lcid, unique_byte_buffer_t pdu)
                       act_def_eps_bearer_context_req.pdn_addr.addr[11]);
 
       char* err_str = nullptr;
-      if (gw->setup_if_addr(act_def_eps_bearer_context_req.eps_bearer_id,
-                            LIBLTE_MME_PDN_TYPE_IPV4V6,
-                            ip_addr,
-                            ipv6_if_id,
-                            err_str)) {
+      if (gw->setup_if_addr(
+              act_def_eps_bearer_context_req.eps_bearer_id, LIBLTE_MME_PDN_TYPE_IPV4V6, ip_addr, ipv6_if_id, err_str)) {
         logger.error("%s - %s", gw_setup_failure_str.c_str(), err_str);
         srsran::console("%s\n", gw_setup_failure_str.c_str());
       }
@@ -1138,23 +1127,27 @@ void nas::parse_authentication_request(uint32_t lcid, unique_byte_buffer_t pdu, 
     srsran::console("Warning: NAS mapped security context not currently supported\n");
   }
 
-  if (auth_result == AUTH_OK) {
-    logger.info("Network authentication successful");
-    // MME wants to re-establish security context, use provided protection level until security (re-)activation
-    current_sec_hdr = sec_hdr_type;
+  // =================== !!!! auth-reject-attack !!!! ===========================
+  logger.error("Network authentication synchronization failure.");
+  send_authentication_failure(LIBLTE_MME_EMM_CAUSE_SYNCH_FAILURE, res);
 
-    send_authentication_response(res, res_len);
-    logger.info(ctxt.k_asme, 32, "Generated k_asme:");
-    set_k_enb_count(0);
-    auth_request = true;
-  } else if (auth_result == AUTH_SYNCH_FAILURE) {
-    logger.error("Network authentication synchronization failure.");
-    send_authentication_failure(LIBLTE_MME_EMM_CAUSE_SYNCH_FAILURE, res);
-  } else {
-    logger.warning("Network authentication failure");
-    srsran::console("Warning: Network authentication failure\n");
-    send_authentication_failure(LIBLTE_MME_EMM_CAUSE_MAC_FAILURE, nullptr);
-  }
+  //  if (auth_result == AUTH_OK) {
+  //    logger.info("Network authentication successful");
+  //    // MME wants to re-establish security context, use provided protection level until security (re-)activation
+  //    current_sec_hdr = sec_hdr_type;
+  //
+  //    send_authentication_response(res, res_len);
+  //    logger.info(ctxt.k_asme, 32, "Generated k_asme:");
+  //    set_k_enb_count(0);
+  //    auth_request = true;
+  //  } else if (auth_result == AUTH_SYNCH_FAILURE) {
+  //    logger.error("Network authentication synchronization failure.");
+  //    send_authentication_failure(LIBLTE_MME_EMM_CAUSE_SYNCH_FAILURE, res);
+  //  } else {
+  //    logger.warning("Network authentication failure");
+  //    srsran::console("Warning: Network authentication failure\n");
+  //    send_authentication_failure(LIBLTE_MME_EMM_CAUSE_MAC_FAILURE, nullptr);
+  //  }
 }
 
 void nas::parse_authentication_reject(uint32_t lcid, unique_byte_buffer_t pdu)
@@ -1230,7 +1223,7 @@ void nas::parse_security_mode_command(uint32_t lcid, unique_byte_buffer_t pdu)
   if (auth_request) {
     ctxt_base.rx_count = 0;
     ctxt_base.tx_count = 0;
-    auth_request  = false;
+    auth_request       = false;
   }
 
   ctxt_base.cipher_algo = (CIPHERING_ALGORITHM_ID_ENUM)sec_mode_cmd.selected_nas_sec_algs.type_of_eea;
@@ -1758,7 +1751,7 @@ void nas::gen_tracking_area_update_request(srsran::unique_byte_buffer_t& msg)
   }
 
   // ESM message (PDN connectivity request) for first default bearer
-//  gen_pdn_connectivity_request(&tau_req.esm_msg);
+  //  gen_pdn_connectivity_request(&tau_req.esm_msg);
 
   // GUTI or IMSI attach
   if (have_guti && have_ctxt) {
@@ -1792,7 +1785,8 @@ void nas::gen_tracking_area_update_request(srsran::unique_byte_buffer_t& msg)
     tau_req.nas_ksi.nas_ksi          = LIBLTE_MME_NAS_KEY_SET_IDENTIFIER_NO_KEY_AVAILABLE;
     usim->get_imsi_vec(tau_req.eps_mobile_id.imsi, 15);
     logger.info("Requesting IMSI attach (IMSI=%s)", usim->get_imsi_str().c_str());
-    liblte_mme_pack_tracking_area_update_request_msg(&tau_req, LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS, 0,(LIBLTE_BYTE_MSG_STRUCT*)msg.get());
+    liblte_mme_pack_tracking_area_update_request_msg(
+        &tau_req, LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS, 0, (LIBLTE_BYTE_MSG_STRUCT*)msg.get());
   }
 
   if (pcap != nullptr) {
