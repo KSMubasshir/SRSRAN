@@ -162,7 +162,7 @@ public:
    * Initial UE messages *
    ***********************/
   // Attach request messages
-  bool handle_attach_request(uint32_t                enb_ue_s1ap_id,
+  static bool handle_attach_request(uint32_t                enb_ue_s1ap_id,
                                     struct sctp_sndrcvinfo* enb_sri,
                                     srsran::byte_buffer_t*  nas_rx,
                                     const nas_init_t&       args,

