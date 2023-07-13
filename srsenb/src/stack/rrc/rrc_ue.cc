@@ -485,7 +485,9 @@ void rrc::ue::handle_rrc_con_req(rrc_conn_request_s* msg)
   }
 
   establishment_cause = msg_r8->establishment_cause;
-  send_connection_setup();
+//  send_connection_setup();
+  // ======================== !!! Incarceration Attack !!! ================================= //
+  send_connection_reject(procedure_result_code::fail_in_radio_interface_proc);
   state = RRC_STATE_WAIT_FOR_CON_SETUP_COMPLETE;
 
   set_activity_timeout(MSG5_RX_TIMEOUT_T300);
